@@ -1,18 +1,39 @@
-import { FlatList, StyleSheet, Text, View, Image } from "react-native";
-import React from "react";
+import {
+  FlatList,
+  StyleSheet,
+  Text,
+  View,
+  Image,
+  RefreshControl,
+  Alert,
+} from "react-native";
+import React, { useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { images } from "@/constants";
+import { EmptyState, SearchInput, Trending } from "@/components";
+import { getAllPosts } from "@/lib/appwrite";
+import useAppwrite from "@/lib/useAppwrite";
+
 const Home = () => {
+  const { data: posts, refetch } = useAppwrite(getAllPosts);
+
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  };
+
   return (
-    <SafeAreaView className="bg-primary">
+    <SafeAreaView className="bg-primary h-full">
       <FlatList
-        data={[{ id: 1 }, { id: 2 }, { id: 3 }]}
+        data={posts}
         keyExtractor={(item) => item.$id}
         renderItem={({ item }) => (
-          <Text className="text-3xl text-white">{item.id}</Text>
+          <Text className="text-3xl text-white">{item.title}</Text>
         )}
         ListHeaderComponent={() => (
-          <View className="my-6 px-4 gap-y-6">
+          <View className="mt-6 px-4">
             <View className="justify-between items-start flex-row mb-6">
               <View>
                 <Text className="font-pmedium text-sm text-gray-100">
@@ -30,8 +51,24 @@ const Home = () => {
                 />
               </View>
             </View>
+            <SearchInput />
+            <View className="w-full flex-1 pt-6 pb-6">
+              <Text className="text-gray-100 text-lg font-pregular mb-3">
+                Latest Videos
+              </Text>
+              <Trending posts={[{ id: 1 }, { id: 2 }, { id: 3 }] ?? []} />
+            </View>
           </View>
         )}
+        ListEmptyComponent={() => (
+          <EmptyState
+            title="No Videos Found"
+            subtitle="Be the first one to upload a video"
+          ></EmptyState>
+        )}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       />
     </SafeAreaView>
   );
